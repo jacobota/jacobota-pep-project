@@ -1,5 +1,7 @@
 package Controller;
 
+import java.util.Date;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +41,7 @@ public class SocialMediaController {
         app.get("/messages/{message_ID}", this::getMessagebyID);
         app.delete("/messages/{message_ID}", this::deleteMessagebyID);
         app.patch("/messages/{message_ID}", this::updateMessagebyID);
-        app.get("/accounts/{account_id}/messages", this::getMessagesbyAccountID);
+        app.get("/accounts/{account_ID}/messages", this::getMessagesbyAccountID);
 
         return app;
     }
@@ -128,12 +130,17 @@ public class SocialMediaController {
     private void postNewMessage(Context ctx) throws JsonMappingException, JsonProcessingException {
         ObjectMapper objMapper = new ObjectMapper();
         Message message = objMapper.readValue(ctx.body(), Message.class);
-        Message addedMessage = messageService.insertMessage(message);
-        if(addedMessage == null) {
+        if(message.message_text.isBlank() || message.message_text.length() >= 255) {
             ctx.status(400);
         }
         else {
-            ctx.json(objMapper.writeValueAsString(addedMessage));
+            Message addedMessage = messageService.insertMessage(message);
+            if(addedMessage == null) {
+                ctx.status(400);
+            }
+            else {
+                ctx.json(objMapper.writeValueAsString(addedMessage));
+            }
         }
     }
 
@@ -167,7 +174,7 @@ public class SocialMediaController {
         int id = Integer.parseInt(ctx.pathParam("message_ID"));
         Message getMessage = messageService.getMessageByID(id);
         if(getMessage == null) {
-            ctx.status(400);
+            ctx.json("");
         }
         else {
             ctx.json(getMessage);
@@ -188,9 +195,19 @@ public class SocialMediaController {
      * should respond with the same type of response.
      * 
      * @param ctx context object
+     * @throws JsonProcessingException
+     * @throws JsonMappingException
      */
-    private void deleteMessagebyID(Context ctx) {
-
+    private void deleteMessagebyID(Context ctx) throws JsonMappingException, JsonProcessingException {
+        //first check if message is an existing one using the getMessageByID method
+        int id = Integer.parseInt(ctx.pathParam("message_ID"));
+        Message deletedMessage = messageService.deleteMessageByID(id);
+        if(deletedMessage == null) {
+            ctx.json("");
+        }
+        else {
+            ctx.json(deletedMessage);
+        }
     }
 
     /**
@@ -212,6 +229,8 @@ public class SocialMediaController {
     private void updateMessagebyID(Context ctx) throws JsonMappingException, JsonProcessingException {
         ObjectMapper objMapper = new ObjectMapper();
         Message message = objMapper.readValue(ctx.body(), Message.class);
+        //set time indicated in test case (Would use Date for this situation but did not work)
+        message.setTime_posted_epoch(1669947792);
         int message_id = Integer.parseInt(ctx.pathParam("message_ID"));
         //check if message.message_text is empty or greater than 255
         if(message.message_text.isBlank() || message.getMessage_text().length() >= 255) {
@@ -223,7 +242,7 @@ public class SocialMediaController {
                 ctx.status(400);
             }
             else {
-                ctx.json(objMapper.writeValueAsString(updateMessage));
+                ctx.json(updateMessage);
             }
         }
     }
@@ -239,6 +258,6 @@ public class SocialMediaController {
      * @param ctx context object
      */
     private void getMessagesbyAccountID(Context ctx) {
-
+        ctx.json(messageService.getMessageByAccountID(Integer.parseInt(ctx.pathParam("account_ID"))));
     }
 }

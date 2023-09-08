@@ -84,7 +84,7 @@ public class MessageDAO {
             ResultSet rs = ps.executeQuery();
             if(rs.next()) {
                 return new Message(rs.getInt("message_id"), rs.getInt("posted_by"), rs.getString("message_text"), rs.getLong("time_posted_epoch"));
-            }
+            } 
         } catch(SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -100,17 +100,21 @@ public class MessageDAO {
     public Message deleteMessageByID(int message_id) {
         Connection connection = ConnectionUtil.getConnection();
         try {
-            // SQL Statement to select all records from the DB
-            String sql = "DELETE FROM message WHERE message_id = ?";
-            PreparedStatement ps = connection.prepareStatement(sql);
+            Message messageToReturn = getMessageByID(message_id);
+            if(messageToReturn != null) {
+                // SQL Statement to select all records from the DB
+                String sql = "DELETE FROM message WHERE message_id = ?";
+                PreparedStatement ps = connection.prepareStatement(sql);
 
-            ps.setInt(1, message_id);
+                ps.setInt(1, message_id);
 
-            // put all records into the return list
-            ResultSet rs = ps.executeQuery();
-            if(rs.next()) {
-                return new Message(rs.getInt("message_id"), rs.getInt("posted_by"), rs.getString("message_text"), rs.getLong("time_posted_epoch"));
+                // put all records into the return list
+                ps.executeUpdate();
+                return messageToReturn;
             }
+            else {
+                return null;
+            }            
         } catch(SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -136,9 +140,6 @@ public class MessageDAO {
  
              // execute the query
              ps.executeUpdate();
-             
-             // select the newly updated message
-             return getMessageByID(message_id);
         } catch(SQLException e) {
             System.out.println(e.getMessage());
         }

@@ -64,7 +64,8 @@ public class MessageService {
      * @return updated message by ID, else null
      */
     public Message updateMessageByID(int message_id, Message message) {
-        return messageDao.updateMessageByID(message_id, message);
+        messageDao.updateMessageByID(message_id, message);
+        return getMessageByID(message_id);
     }
 
     /**
